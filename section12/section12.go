@@ -10,7 +10,6 @@ func main() {
 		fmt.Fprintf(w, "Hello, Go web development")
 	})
 
-	output := http.ListenAndServe(":8080", nil)
+	fmt.Println(http.ListenAndServe(":8080", nil))
 
-	fmt.Println(output)
 }
