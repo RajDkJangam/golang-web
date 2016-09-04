@@ -2,8 +2,9 @@ Download SQLite from this site : https://www.sqlite.org/download.html
 
 Find these two files :
 
-sqlite-dll-win64-x64-3140100.zip (701.54 KiB)		64-bit DLL (x64) for SQLite version 3.14.1.
-sqlite-tools-win32-x86-3140100.zip (1.52 MiB)	
+sqlite-dll-win64-x64-3140100.zip 
+
+sqlite-tools-win32-x86-3140100.zip 
 
 put in a same folder, for example c:\sqlite, then extract zip file. To make it easier in command line, you can add c:\sqlite folder to PATH environment variables value
 
