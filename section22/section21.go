@@ -1,8 +1,9 @@
-package main 
+package main
+
 import (
 	"fmt"
-	"net/http"
 	"html/template"
+	"net/http"
 
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,15 +15,15 @@ import (
 )
 
 type Page struct {
-	Name string
+	Name     string
 	DBStatus bool
 }
 
 type SearchResult struct {
-	Title string `xml:"title,attr"`
+	Title  string `xml:"title,attr"`
 	Author string `xml:"author,attr"`
-	Year string `xml:"hyr,attr"`
-	ID string `xml:"owi,attr"`
+	Year   string `xml:"hyr,attr"`
+	ID     string `xml:"owi,attr"`
 }
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 	db, _ := sql.Open("sqlite3", "dev.db")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		p := Page{Name: "Gopher"}
 
 		if name := r.FormValue("name"); name != "" {
@@ -44,7 +45,7 @@ func main() {
 
 	})
 
-	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request){
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 
 		var results []SearchResult
 		var err error
@@ -54,7 +55,7 @@ func main() {
 		}
 
 		encoder := json.NewEncoder(w)
-		if err = encoder.Encode(results); err != nil{
+		if err = encoder.Encode(results); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
@@ -67,9 +68,9 @@ type ClassifySearchResponse struct {
 	Results []SearchResult `xml:"works>work"`
 }
 
-func search(query string) ([]SearchResult, error){
+func search(query string) ([]SearchResult, error) {
 	var resp *http.Response
-	var err error 
+	var err error
 
 	if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?summary=true&title=" + url.QueryEscape(query)); err != nil {
 		return []SearchResult{}, err
@@ -78,9 +79,9 @@ func search(query string) ([]SearchResult, error){
 	defer resp.Body.Close()
 	var body []byte
 	if body, err = ioutil.ReadAll(resp.Body); err != nil {
-		return [] SearchResult{}, err
+		return []SearchResult{}, err
 	}
-	var c ClassifySearchResponse 
+	var c ClassifySearchResponse
 	err = xml.Unmarshal(body, &c)
 	return c.Results, err
 }

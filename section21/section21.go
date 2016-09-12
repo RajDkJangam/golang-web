@@ -1,8 +1,9 @@
-package main 
+package main
+
 import (
 	"fmt"
-	"net/http"
 	"html/template"
+	"net/http"
 
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
@@ -11,15 +12,15 @@ import (
 )
 
 type Page struct {
-	Name string
+	Name     string
 	DBStatus bool
 }
 
 type SearchResult struct {
-	Title string
+	Title  string
 	Author string
-	Year string
-	ID string
+	Year   string
+	ID     string
 }
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 
 	db, _ := sql.Open("sqlite3", "dev.db")
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		p := Page{Name: "Gopher"}
 
 		if name := r.FormValue("name"); name != "" {
@@ -41,14 +42,14 @@ func main() {
 
 	})
 
-	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request){
-		results := []SearchResult {
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		results := []SearchResult{
 			SearchResult{"Moby-Dick", "Herman Melville", "1851", "22222"},
 			SearchResult{"The Adventures of Huckleberry Finn", "Mark Twain", "1884", "444444"},
 			SearchResult{"The Catcher in the Rye", "JD Salinger", "1951", "333333"},
-		}	
+		}
 		encoder := json.NewEncoder(w)
-		if err := encoder.Encode(results); err != nil{
+		if err := encoder.Encode(results); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})

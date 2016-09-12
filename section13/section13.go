@@ -1,9 +1,9 @@
 package main
 
-import(
+import (
 	"fmt"
-	"net/http"
 	"html/template"
+	"net/http"
 )
 
 type Page struct {
@@ -14,11 +14,11 @@ func main() {
 
 	templates := template.Must(template.ParseFiles("templates/index.html"))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 		p := Page{Name: "Gopher"}
 
-		if name := r.FormValue("name");  name != "" {
+		if name := r.FormValue("name"); name != "" {
 			p.Name = name
 		}
 
@@ -29,6 +29,5 @@ func main() {
 	})
 
 	fmt.Println(http.ListenAndServe(":8080", nil))
-	
 
 }

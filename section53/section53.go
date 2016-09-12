@@ -1,4 +1,5 @@
-package main 
+package main
+
 import (
 	"net/http"
 
@@ -7,44 +8,44 @@ import (
 
 	"encoding/json"
 	"encoding/xml"
+	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
 	"net/url"
 	"strconv"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/codegangsta/negroni"
 	// "github.com/urfave/negroni"
 	// "github.com/goincremental/negroni-sessions"
 	// "github.com/goincremental/negroni-sessions/cookiestore"
-	"github.com/yosssi/ace"
 	gmux "github.com/gorilla/mux"
+	"github.com/yosssi/ace"
 	"gopkg.in/gorp.v1"
 )
 
 type Book struct {
-	PK int64 `db:"pk"`
-	Title string `db:"title"`
-	Author string `db:"author"`
+	PK             int64  `db:"pk"`
+	Title          string `db:"title"`
+	Author         string `db:"author"`
 	Classification string `db:"classification"`
-	ID string `db:"id"`
+	ID             string `db:"id"`
 }
 
 type User struct {
 	Username string `db:"username"`
-	Secret []byte `db:"secret"`
+	Secret   []byte `db:"secret"`
 }
 
 type Page struct {
-	Books []Book
+	Books  []Book
 	Filter string
-	User string
+	User   string
 }
 
 type SearchResult struct {
-	Title string `xml:"title,attr"`
+	Title  string `xml:"title,attr"`
 	Author string `xml:"author,attr"`
-	Year string `xml:"hyr,attr"`
-	ID string `xml:"owi,attr"`
+	Year   string `xml:"hyr,attr"`
+	ID     string `xml:"owi,attr"`
 }
 
 type LoginPage struct {
@@ -54,7 +55,7 @@ type LoginPage struct {
 var db *sql.DB
 var dbmap *gorp.DbMap
 
-func initDb(){
+func initDb() {
 	db, _ = sql.Open("sqlite3", "dev.db")
 
 	dbmap = &gorp.DbMap{Db: db, Dialect: gorp.SqliteDialect{}}
@@ -65,7 +66,7 @@ func initDb(){
 
 }
 
-func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc){
+func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if err := db.Ping(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -85,7 +86,7 @@ func getBookCollection(books *[]Book, sortCol string, filterByClass string, w ht
 		where = " where classification not between '800' and '900'"
 	}
 
-	if _, err := dbmap.Select(books, "select * from books " + where + " order by " + sortCol); err != nil {
+	if _, err := dbmap.Select(books, "select * from books "+where+" order by "+sortCol); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return false
 	}
@@ -121,9 +122,9 @@ func main() {
 
 	mux := gmux.NewRouter()
 
-	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request){
+	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		var p LoginPage
-		if r.FormValue("register") != ""{
+		if r.FormValue("register") != "" {
 			secret, _ := bcrypt.GenerateFromPassword([]byte(r.FormValue("password")), bcrypt.DefaultCost)
 			user := User{r.FormValue("username"), secret}
 
@@ -131,7 +132,7 @@ func main() {
 				p.Error = err.Error()
 			} else {
 				http.Redirect(w, r, "/", http.StatusFound)
-				return				
+				return
 			}
 
 		} else if r.FormValue("login") != "" {
@@ -147,7 +148,7 @@ func main() {
 				} else {
 					// sessions.GetSession(r).Set("User", u.Username)
 					http.Redirect(w, r, "/", http.StatusFound)
-					return					
+					return
 				}
 			}
 		}
@@ -156,22 +157,22 @@ func main() {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}	
+		}
 
 		if err = template.Execute(w, p); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return			
+			return
 		}
 	})
 
-	mux.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request){
-		// sessions.GetSession(r).Set("User", nil)	
-		// sessions.GetSession(r).Set("Filter", nil)	
-		
+	mux.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		// sessions.GetSession(r).Set("User", nil)
+		// sessions.GetSession(r).Set("Filter", nil)
+
 		http.Redirect(w, r, "/login", http.StatusFound)
 	})
 
-	mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request){
+	mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request) {
 
 		var b []Book
 		if !getBookCollection(&b, getStringFromSession(r, "SortBy"), r.FormValue("filter"), w) {
@@ -182,12 +183,12 @@ func main() {
 
 		if err := json.NewEncoder(w).Encode(b); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return			
+			return
 		}
 
 	}).Methods("GET").Queries("filter", "{filter:all|fiction|nonfiction}")
 
-	mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request){
+	mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request) {
 
 		var b []Book
 		if !getBookCollection(&b, r.FormValue("sortBy"), getStringFromSession(r, "Filter"), w) {
@@ -198,21 +199,20 @@ func main() {
 
 		if err := json.NewEncoder(w).Encode(b); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return			
+			return
 		}
 
 	}).Methods("GET").Queries("sortBy", "{sortBy:title|author|classification}")
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		template, err := ace.Load("templates/index", "", nil)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-
 		p := Page{Books: []Book{}, Filter: getStringFromSession(r, "Filter"), User: getStringFromSession(r, "User")}
 		if !getBookCollection(&p.Books, getStringFromSession(r, "SortBy"), getStringFromSession(r, "Filter"), w) {
-			return 
+			return
 		}
 
 		if err = template.Execute(w, p); err != nil {
@@ -221,7 +221,7 @@ func main() {
 
 	}).Methods("GET")
 
-	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request){
+	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 
 		var results []SearchResult
 		var err error
@@ -231,43 +231,42 @@ func main() {
 		}
 
 		encoder := json.NewEncoder(w)
-		if err = encoder.Encode(results); err != nil{
+		if err = encoder.Encode(results); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}).Methods("POST")
 
-	mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request){
+	mux.HandleFunc("/books", func(w http.ResponseWriter, r *http.Request) {
 		var book ClassifyBookResponse
 		var err error
 		if book, err = find(r.FormValue("id")); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		
+
 		b := Book{
-			PK: -1,
-			Title: book.BookData.Title,
-			Author: book.BookData.Author,
+			PK:             -1,
+			Title:          book.BookData.Title,
+			Author:         book.BookData.Author,
 			Classification: book.Classification.MostPopular,
 		}
-		if err = dbmap.Insert(&b); err != nil{
+		if err = dbmap.Insert(&b); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 
 		if err := json.NewEncoder(w).Encode(b); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}).Methods("PUT")
 
-	mux.HandleFunc("/books/{pk}", func(w http.ResponseWriter, r *http.Request){
-		
+	mux.HandleFunc("/books/{pk}", func(w http.ResponseWriter, r *http.Request) {
+
 		pk, _ := strconv.ParseInt(gmux.Vars(r)["pk"], 10, 64)
 
 		if _, err := dbmap.Delete(&Book{pk, "", "", "", ""}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}	
+		}
 
 		w.WriteHeader(http.StatusOK)
 
@@ -280,7 +279,6 @@ func main() {
 	n.UseHandler(mux)
 	n.Run(":8080")
 
-
 }
 
 type ClassifySearchResponse struct {
@@ -289,9 +287,9 @@ type ClassifySearchResponse struct {
 
 type ClassifyBookResponse struct {
 	BookData struct {
-		Title string `xml:"title,attr"`
+		Title  string `xml:"title,attr"`
 		Author string `xml:"author,attr"`
-		ID string `xml:"owi,attr"`
+		ID     string `xml:"owi,attr"`
 	} `xml:"work"`
 	Classification struct {
 		MostPopular string `xml:"sfa,attr"`
@@ -299,19 +297,19 @@ type ClassifyBookResponse struct {
 }
 
 func find(id string) (ClassifyBookResponse, error) {
-	var c ClassifyBookResponse 
-	
+	var c ClassifyBookResponse
+
 	body, err := classifyAPI("http://classify.oclc.org/classify2/Classify?summary=true&owi=" + url.QueryEscape(id))
 	if err != nil {
 		return ClassifyBookResponse{}, err
 	}
 
-	err = xml.Unmarshal(body, &c)	
+	err = xml.Unmarshal(body, &c)
 	return c, err
 }
 
-func search(query string) ([]SearchResult, error){
-	var c ClassifySearchResponse 
+func search(query string) ([]SearchResult, error) {
+	var c ClassifySearchResponse
 	body, err := classifyAPI("http://classify.oclc.org/classify2/Classify?summary=true&title=" + url.QueryEscape(query))
 	if err != nil {
 		return []SearchResult{}, err
@@ -321,9 +319,9 @@ func search(query string) ([]SearchResult, error){
 	return c.Results, err
 }
 
-func classifyAPI(url string) ([]byte, error){
+func classifyAPI(url string) ([]byte, error) {
 	var resp *http.Response
-	var err error 
+	var err error
 
 	if resp, err = http.Get(url); err != nil {
 		return []byte{}, err
